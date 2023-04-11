@@ -3,10 +3,12 @@ import 'bootstrap/dist/css/bootstrap.css';
 import { useEffect, useState } from "react";
 
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getDatabase, onValue, ref, set, remove } from "firebase/database";
+import MsgForm from "./MsgForm";
+
 
 import { uid } from 'uid';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_apiKey,
@@ -20,17 +22,16 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const database = getDatabase(app);
 
 function App() {
 
   const [chat, setChat] = useState([]);
-
   const [msg, setMsg] = useState("");
   const [userID, setID] = useState(-1);
 
   useEffect(() => {
+
     const localID = localStorage.getItem("uid");
     if (localID === null) {
       const idGen = uid();
@@ -39,21 +40,26 @@ function App() {
     } else {
       setID(localID);
     }
-    console.log("uid " + userID);
     onValue(ref(database, '/chat'), snp => {
       setChat([]);
       const msg = snp.val();
       if (msg !== null)
         Object.values(msg).forEach(m => {
-          console.log(m);
           setChat(cht => [...cht, m]);
         });
     });
+
   }, []);
 
   function gravarMsg(m) {
     const msgID = uid();
-    set(ref(database, `/chat/${msgID}`), { id: msgID, msg: m, user: userID, t: Date.now() });
+    set(ref(database, `/chat/${msgID}`),
+      {
+        id: msgID,
+        msg: m,
+        user: userID,
+        t: Date.now()
+      });
   }
 
   function deletarMsg(id) {
@@ -66,24 +72,35 @@ function App() {
   }
 
   return (
-    <div className="container-sm bg-dark mx-auto text-white p-4 rounded my-2">
+    <div className="container-md bg-dark text-white ">
       <h1>Chat</h1>
-      {chat.map(m => {
-        return (
-          <div className="d-flex align-items-center justify-content-between bg-secondary text-white m-4 border border-2 rounded p-2 w-50" key={m.id}>
-            <p className='fw-bold fs-2'>{m.msg}</p>
-            <div className='d-flex gap-2'>
-              <span>{new Date(m.t).toLocaleTimeString()}</span>
-              {m.user === userID ? (<button className='btn btn-dark py-0' onClick={() => deletarMsg(m.id)}>Del</button>) : ""}
-            </div>
-          </div>);
-      })}
-      <form action="" onSubmit={(e) => { e.preventDefault(); }}>
-        <h3>Escreva uma mensagem: </h3>
-        <input type="text" name="ti" id="ti" onKeyDown={() => { return false; }} onChange={(e) => setMsg(e.target.value)} />
-        <button className="btn btn-primary mx-2" type="button" onClick={okHandler} >Enviar</button>
-      </form>
+      <div className='row'>
+        <div className='col-xl bg-secondary rounded'>
+
+          {chat.sort((ma, mb) => ma.t < mb.t).map(m => {
+            return (
+              <div className="d-flex align-items-center justify-content-between bg-dark text-white m-4 border border-2 rounded p-2" key={m.id}>
+                <p className='fw-bold fs-2'>{m.msg}</p>
+                <div className='d-flex gap-2'>
+                  <span>{new Date(m.t).toLocaleTimeString()}</span>
+                  {m.user === userID ? (<button className='btn btn-warning py-0' onClick={() => deletarMsg(m.id)}>Del</button>) : ""}
+                </div>
+              </div>);
+          })}
+
+        </div>
+
+        <div className='d-flex flex-column align-items-center justify-content-center col m-2 py-5 bg-secondary rounded'>
+          <h3>URL</h3>
+          <QRCodeCanvas value="https://pi2-exemplo-94589.firebaseapp.com/" />
+        </div>
+
+      </div>
+      <MsgForm setMsg={setMsg} okHandler={okHandler} />
+
     </div>
   );
 }
 export default App;
+
+
