@@ -33,7 +33,6 @@ const provider = new GoogleAuthProvider();
 function App() {
 
   const [chat, setChat] = useState([]);
-  const [msg, setMsg] = useState("");
   const [user, setUser] = useState(undefined);
 
   useEffect(() => {
@@ -80,15 +79,13 @@ function App() {
         userName: user.name,
         time: Date.now()
       });
-    setMsg("");
   }
 
   function deleteHandler(id) {
     remove(ref(database, `/chat/${id}`));
   }
 
-  function okHandler(e) {
-    e.preventDefault();
+  function okHandler(msg) {
     gravarMsg(msg);
   }
 
@@ -107,7 +104,7 @@ function App() {
               <p>{user.name}</p>
             </div>
             <button className='btn btn-danger' onClick={sair}>Sair</button>
-            <MsgForm setMsg={setMsg} okHandler={okHandler} />
+            <MsgForm okHandler={okHandler} />
           </div>}
       </div>
       <div className='row'>
